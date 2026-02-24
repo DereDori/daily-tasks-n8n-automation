@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daily Tasks Automation — Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #2a2a2a;
+    --accent: #c8f060;
+    --accent2: #60b4f0;
+    --accent3: #f06090;
+    --text: #e8e8e8;
+    --muted: #666;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 80px 80px 60px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,240,96,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(96,180,240,0.05) 0%, transparent 70%);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+
+  .hero h1 {
+    font-family: var(--sans);
+    font-size: clamp(48px, 8vw, 110px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.4s;
+  }
+
+  .hero h1 span {
+    color: var(--accent);
+    display: block;
+  }
+
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.9;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.6s;
+  }
+
+  .hero-meta {
+    position: absolute;
+    top: 60px;
+    right: 80px;
+    text-align: right;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.8s;
+  }
+
+  .hero-meta .label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .hero-meta .value {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .hero-meta .value + .label { margin-top: 20px; }
+
+  /* LAYOUT */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 80px;
+  }
+
+  section {
+    padding: 100px 80px;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SECTION HEADERS */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-family: var(--sans);
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 48px;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  p {
+    color: #aaa;
+    line-height: 1.9;
+    margin-bottom: 16px;
+    max-width: 680px;
+  }
+
+  /* OVERVIEW GRID */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .overview-cell {
+    background: var(--bg);
+    padding: 36px;
+  }
+
+  .overview-cell .num {
+    font-family: var(--sans);
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .overview-cell .desc {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* TECH STACK */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .stack-item {
+    background: var(--surface);
+    padding: 28px 32px;
+    transition: background 0.2s;
+  }
+
+  .stack-item:hover { background: var(--surface2); }
+
+  .stack-item .tool-name {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .stack-item .tool-role {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .stack-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-bottom: 16px;
+  }
+
+  /* NODE PIPELINE */
+  .pipeline {
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .pipeline-node {
+    background: var(--surface);
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 48px 1fr 200px;
+    align-items: center;
+    gap: 24px;
+    transition: background 0.2s;
+    cursor: default;
+  }
+
+  .pipeline-node:hover { background: var(--surface2); }
+
+  .node-num {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--border);
+    line-height: 1;
+  }
+
+  .pipeline-node:hover .node-num { color: var(--accent); }
+
+  .node-info .node-name {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .node-info .node-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .node-type {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-align: center;
+    justify-self: end;
+  }
+
+  .node-type.trigger { border-color: var(--accent); color: var(--accent); }
+  .node-type.code { border-color: var(--accent2); color: var(--accent2); }
+  .node-type.dropbox { border-color: var(--accent3); color: var(--accent3); }
+  .node-type.merge { border-color: #f0c060; color: #f0c060; }
+
+  /* SECTION RULES */
+  .section-rules {
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .rule-row {
+    background: var(--surface);
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    align-items: start;
+    transition: background 0.2s;
+  }
+
+  .rule-row:hover { background: var(--surface2); }
+
+  .rule-header {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    padding: 4px 0;
+  }
+
+  .rule-desc {
+    font-size: 13px;
+    color: #aaa;
+    line-height: 1.7;
+  }
+
+  .rule-badge {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    margin-bottom: 8px;
+    border: 1px solid;
+  }
+
+  .badge-copy { border-color: var(--accent); color: var(--accent); }
+  .badge-replace { border-color: var(--accent3); color: var(--accent3); }
+  .badge-reset { border-color: var(--accent2); color: var(--accent2); }
+  .badge-empty { border-color: var(--muted); color: var(--muted); }
+  .badge-exact { border-color: #f0c060; color: #f0c060; }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 28px 32px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.8;
+    white-space: pre;
+  }
+
+  .code-block .comment { color: var(--muted); }
+  .code-block .keyword { color: var(--accent2); }
+  .code-block .string { color: var(--accent); }
+
+  /* CHORE LOGIC */
+  .logic-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-top: 32px;
+  }
+
+  .logic-box h4 {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .logic-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .logic-step-num {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 20px;
+    margin-top: 2px;
+  }
+
+  .logic-step-text {
+    font-size: 13px;
+    color: #aaa;
+    line-height: 1.7;
+  }
+
+  /* CLOSING */
+  .closing {
+    background: var(--surface);
+  }
+
+  .closing-inner {
+    max-width: 720px;
+  }
+
+  /* REFERENCES */
+  .ref-list {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .ref-item {
+    background: var(--bg);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    transition: background 0.2s;
+  }
+
+  .ref-item:hover { background: var(--surface); }
+
+  .ref-item a {
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .ref-item a:hover { color: var(--accent); }
+
+  .ref-name { color: var(--text); }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+
+  footer .left {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  footer .right {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  @media (max-width: 768px) {
+    .hero, section, footer { padding: 60px 24px; }
+    .hero-meta { display: none; }
+    .overview-grid, .stack-grid { grid-template-columns: 1fr; }
+    .pipeline-node { grid-template-columns: 32px 1fr; }
+    .node-type { display: none; }
+    .rule-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-meta">
+    <div class="label">Author</div>
+    <div class="value">Dariush Rahimi</div>
+    <div class="label">Platform</div>
+    <div class="value">n8n + Dropbox</div>
+    <div class="label">Trigger</div>
+    <div class="value">Daily @ 05:00</div>
+    <div class="label">Version</div>
+    <div class="value">1.0.0</div>
+  </div>
+  <div class="hero-tag">// Workflow Documentation</div>
+  <h1>Daily Tasks<span>Automation</span></h1>
+  <p class="hero-sub">An n8n workflow that rebuilds your Obsidian daily task file every morning — pulling from calendar events, chore schedules, and yesterday's unfinished work.</p>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-label">// 01 — Overview</div>
+  <h2>What is this?</h2>
+  <p>Every morning at 5 AM, this workflow reads your Obsidian vault stored in Dropbox, processes seven distinct sections according to custom rules, fetches today's calendar events, calculates which household chores are due, and writes a fresh Daily Tasks file — ready before you wake up.</p>
+  <p>It also archives yesterday's original file to a dedicated archive folder, preserving a full history of every day's focus.</p>
+
+  <div class="overview-grid">
+    <div class="overview-cell">
+      <div class="num">12</div>
+      <div class="desc">Total Nodes in Workflow</div>
+    </div>
+    <div class="overview-cell">
+      <div class="num">7</div>
+      <div class="desc">Markdown Sections Processed</div>
+    </div>
+    <div class="overview-cell">
+      <div class="num">05:00</div>
+      <div class="desc">Daily Trigger Time</div>
+    </div>
+    <div class="overview-cell">
+      <div class="num">17</div>
+      <div class="desc">Chores Tracked by Repetition</div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack">
+  <div class="section-label">// 02 — Categories</div>
+  <h2>Tech Stack &amp; Tools</h2>
+  <p>The workflow is built entirely on self-hosted infrastructure, using open-source and free-tier tools.</p>
+
+  <div class="stack-grid">
+    <div class="stack-item">
+      <div class="stack-dot" style="background: var(--accent)"></div>
+      <div class="tool-name">n8n</div>
+      <div class="tool-role">Self-hosted workflow automation engine. Orchestrates all nodes, scheduling, and data flow.</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-dot" style="background: #0061fe"></div>
+      <div class="tool-name">Dropbox</div>
+      <div class="tool-role">Cloud storage for the Obsidian vault. Used for reading, writing, and archiving markdown files via OAuth2 API.</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-dot" style="background: #7c3aed"></div>
+      <div class="tool-name">Obsidian</div>
+      <div class="tool-role">Personal knowledge management app. The vault format (markdown + wikilinks) defines the file structure this workflow targets.</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-dot" style="background: var(--accent2)"></div>
+      <div class="tool-name">JavaScript</div>
+      <div class="tool-role">All processing logic lives in n8n Code nodes — markdown parsing, date calculation, chore due-date logic, and file assembly.</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-dot" style="background: #f0c060"></div>
+      <div class="tool-name">remotely-save</div>
+      <div class="tool-role">Obsidian plugin that syncs the vault to Dropbox automatically, making files accessible to the workflow.</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-dot" style="background: var(--accent3)"></div>
+      <div class="tool-name">JSON (chores.json)</div>
+      <div class="tool-role">A flat JSON file stored in Dropbox tracking each chore's repetition interval and last completed date in Epoch ms.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section id="pipeline">
+  <div class="section-label">// 03 — Components</div>
+  <h2>Node Pipeline</h2>
+  <p>The workflow runs 12 nodes in sequence. Each node has a single responsibility and passes its output forward through Merge nodes that keep all context available downstream.</p>
+
+  <div class="pipeline">
+    <div class="pipeline-node">
+      <div class="node-num">01</div>
+      <div class="node-info">
+        <div class="node-name">Daily 5AM Trigger</div>
+        <div class="node-desc">Fires the workflow every day at 05:00 using a Schedule Trigger.</div>
+      </div>
+      <div class="node-type trigger">Schedule</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">02</div>
+      <div class="node-info">
+        <div class="node-name">Calculate Dates</div>
+        <div class="node-desc">Computes yesterdayDate, archiveFilename, todayDate, todayEpoch (midnight ms), and weekdayLetter (M/T/W/R/F/S/U).</div>
+      </div>
+      <div class="node-type code">Code</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">03</div>
+      <div class="node-info">
+        <div class="node-name">Download Daily Tasks.md</div>
+        <div class="node-desc">Downloads the current Daily Tasks.md from Dropbox as binary.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">04</div>
+      <div class="node-info">
+        <div class="node-name">Extract from File</div>
+        <div class="node-desc">Converts binary Dropbox download to plain text JSON field. Required due to n8n filesystem binary mode.</div>
+      </div>
+      <div class="node-type code">Extract</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">05</div>
+      <div class="node-info">
+        <div class="node-name">Parse Markdown Sections</div>
+        <div class="node-desc">Splits the markdown into 7 named sections using indexOf-based parsing. Carries originalContent for archiving.</div>
+      </div>
+      <div class="node-type code">Code</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">06</div>
+      <div class="node-info">
+        <div class="node-name">List Calendar Folder</div>
+        <div class="node-desc">Lists all files in /06 Archive/Calendar/ from Dropbox.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">07</div>
+      <div class="node-info">
+        <div class="node-name">Filter Calendar Files</div>
+        <div class="node-desc">Filters files matching today's date (YYYY-MM-DD) or recurring weekday pattern (Every X). Outputs formatted wikilinks.</div>
+      </div>
+      <div class="node-type code">Code</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">08</div>
+      <div class="node-info">
+        <div class="node-name">Download chores.json</div>
+        <div class="node-desc">Downloads the chores tracking JSON from /Apps/chores.json in Dropbox.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">09</div>
+      <div class="node-info">
+        <div class="node-name">Process Chores</div>
+        <div class="node-desc">Parses chores JSON, checks due dates via Epoch ms, outputs due chore lines, updates lastDone to todayEpoch − 12h.</div>
+      </div>
+      <div class="node-type code">Code</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">10</div>
+      <div class="node-info">
+        <div class="node-name">Write Updated chores.json</div>
+        <div class="node-desc">Uploads the updated chores JSON back to Dropbox, persisting the new lastDone values.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">11</div>
+      <div class="node-info">
+        <div class="node-name">Rebuild New File</div>
+        <div class="node-desc">Assembles the complete new Daily Tasks.md by applying all 7 section rules. Uses .find() to robustly locate correct merged items.</div>
+      </div>
+      <div class="node-type code">Code</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">12</div>
+      <div class="node-info">
+        <div class="node-name">Write New Daily Tasks.md</div>
+        <div class="node-desc">Overwrites the live Daily Tasks.md with today's rebuilt content.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+    <div class="pipeline-node">
+      <div class="node-num">13</div>
+      <div class="node-info">
+        <div class="node-name">Copy to Archive</div>
+        <div class="node-desc">Writes yesterday's original content to /06 Archive/Days/YYYY-MM-DD Day Focus.md for permanent record.</div>
+      </div>
+      <div class="node-type dropbox">Dropbox</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION RULES -->
+<section id="rules">
+  <div class="section-label">// 04 — Functionality</div>
+  <h2>Section Processing Rules</h2>
+  <p>Each of the 7 markdown sections is handled by a distinct rule. This is the core logic of the workflow.</p>
+
+  <div class="section-rules">
+    <div class="rule-row">
+      <div class="rule-header"># To do from yesterday's</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-copy">Rollup</span><br/>
+        Aggregates all items from yesterday's own section plus the calendar, chores &amp; duties, and randoms sections. All checked items <code>[x]</code> are unchecked to <code>[ ]</code>. Only incomplete items carry forward. The header date link is updated to <code>[[YYYY-MM-DD Day Focus]]</code>.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To do from calander</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-replace">Replace</span><br/>
+        Entirely replaced with today's matched calendar events formatted as <code>- [ ] [[Filename without .md]]</code>. If no events match today, the section is left empty.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To do chores &amp; duties</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-replace">Replace</span><br/>
+        Entirely replaced with today's due chores from chores.json. A chore is due if <code>lastDone + (repetition × 86400000ms) ≤ todayEpoch</code>. If lastDone is null the chore is always due.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To do from Projects</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-exact">Exact Copy</span><br/>
+        Copied completely as-is. All nesting, indentation (tabs), checkbox states, and wikilinks are preserved without any modification.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To do from resolution</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-reset">Force Reset</span><br/>
+        Copied but every checkbox is force-reset to <code>[ ]</code> regardless of prior state. Resolutions reappear fresh every single day.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To do from randoms</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-empty">Empty</span><br/>
+        Completely cleared. All previous random items are discarded. The section header is kept but the body is empty.
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-header">## To keep in mind</div>
+      <div class="rule-desc">
+        <span class="rule-badge badge-exact">Exact Copy</span><br/>
+        Copied completely as-is. Persistent notes and reminders that should always be visible.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHORE LOGIC -->
+<section id="chores">
+  <div class="section-label">// 05 — Implementation</div>
+  <h2>Chore Due-Date Logic</h2>
+  <p>Chores are tracked in a flat JSON file with each entry storing a repetition interval in days and the last completed date as an Epoch millisecond timestamp.</p>
+
+  <div class="code-block">
+    <pre><span class="comment">// chores.json structure</span>
+{
+  <span class="string">"chores"</span>: [
+    { <span class="string">"id"</span>: <span class="string">"1"</span>, <span class="string">"repetition"</span>: 1,  <span class="string">"chorename"</span>: <span class="string">"quick Reset"</span>,  <span class="string">"lastDone"</span>: 1771761600000 },
+    { <span class="string">"id"</span>: <span class="string">"3"</span>, <span class="string">"repetition"</span>: 2,  <span class="string">"chorename"</span>: <span class="string">"do Dishes"</span>,    <span class="string">"lastDone"</span>: null },
+    { <span class="string">"id"</span>: <span class="string">"7"</span>, <span class="string">"repetition"</span>: 7,  <span class="string">"chorename"</span>: <span class="string">"wipe Surfaces"</span>, <span class="string">"lastDone"</span>: 1771761600000 },
+    { <span class="string">"id"</span>: <span class="string">"17"</span>, <span class="string">"repetition"</span>: 90, <span class="string">"chorename"</span>: <span class="string">"clean Windows"</span>, <span class="string">"lastDone"</span>: 1771761600000 }
+  ]
+}</pre>
+  </div>
+
+  <div class="logic-box">
+    <h4>Due Date Calculation</h4>
+    <div class="logic-step">
+      <div class="logic-step-num">01</div>
+      <div class="logic-step-text">If <code>lastDone</code> is <code>null</code> → chore is always due. It has never been completed.</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">02</div>
+      <div class="logic-step-text">Otherwise: <code>dueEpoch = lastDone + (repetition × 86400000)</code></div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">03</div>
+      <div class="logic-step-text">If <code>dueEpoch ≤ todayEpoch</code> (today at midnight) → chore is due today.</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">04</div>
+      <div class="logic-step-text">Due chores get <code>lastDone</code> updated to <code>todayEpoch − 43200000</code> (midnight minus 12 hours) and are written back to Dropbox.</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">05</div>
+      <div class="logic-step-text">Non-due chores are passed through unchanged — their <code>lastDone</code> is never touched.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CALENDAR LOGIC -->
+<section id="calendar">
+  <div class="section-label">// 06 — Implementation</div>
+  <h2>Calendar Matching Logic</h2>
+  <p>The workflow lists all files in the Calendar folder and filters them by two patterns using today's date and weekday letter.</p>
+
+  <div class="logic-box">
+    <h4>Weekday Mapping</h4>
+    <div class="logic-step">
+      <div class="logic-step-num">M</div>
+      <div class="logic-step-text">Monday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">T</div>
+      <div class="logic-step-text">Tuesday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">W</div>
+      <div class="logic-step-text">Wednesday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">R</div>
+      <div class="logic-step-text">Thursday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">F</div>
+      <div class="logic-step-text">Friday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">S</div>
+      <div class="logic-step-text">Saturday</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">U</div>
+      <div class="logic-step-text">Sunday</div>
+    </div>
+  </div>
+
+  <div class="logic-box" style="margin-top: 16px;">
+    <h4>Match Patterns</h4>
+    <div class="logic-step">
+      <div class="logic-step-num">01</div>
+      <div class="logic-step-text"><code>YYYY-MM-DD *.md</code> — matches files for today's exact date. Example: <code>2026-02-23 DnD Session.md</code></div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">02</div>
+      <div class="logic-step-text"><code>(Every X) *.md</code> — matches recurring events where X contains today's weekday letter. Supports multi-day patterns like <code>(Every MWF)</code>.</div>
+    </div>
+    <div class="logic-step">
+      <div class="logic-step-num">03</div>
+      <div class="logic-step-text">Each match is formatted as <code>- [ ] [[Filename without .md]]</code> for Obsidian wikilink compatibility.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section id="closing" class="closing">
+  <div class="section-label">// 07 — Closing Thoughts</div>
+  <h2>Reflections</h2>
+  <div class="closing-inner">
+    <p>Building this workflow piece by piece revealed a lot about how n8n handles binary data in filesystem mode — the biggest surprise was that <code>this.helpers.getBinaryDataBuffer</code> is sandboxed out in newer self-hosted versions, requiring the Extract from File node as a workaround.</p>
+    <p>The Merge + Append pattern for passing context through branching paths turned out to be the most reliable approach. Using <code>items.find()</code> to locate the right item by field presence made the Rebuild node resilient to merge order — a small but important design decision.</p>
+    <p>The chore system using Epoch milliseconds is deliberately simple — no timezone complexity, no date libraries, just arithmetic. The 12-hour offset on <code>lastDone</code> ensures a chore completed "today" won't resurface again tomorrow even if the repetition interval is 1 day.</p>
+    <p>The workflow is intentionally modular. Each node does one thing. That made debugging straightforward and will make future changes — like adding a shopping list to chores, or a new section type — easy to slot in without touching the rest of the chain.</p>
+
+    <div class="ref-list" style="margin-top: 48px;">
+      <div class="ref-item">
+        <span class="ref-name">n8n Documentation</span>
+        <a href="https://docs.n8n.io" target="_blank">docs.n8n.io →</a>
+      </div>
+      <div class="ref-item">
+        <span class="ref-name">Dropbox API Reference</span>
+        <a href="https://www.dropbox.com/developers/documentation" target="_blank">dropbox.com/developers →</a>
+      </div>
+      <div class="ref-item">
+        <span class="ref-name">Obsidian — Personal Knowledge Base</span>
+        <a href="https://obsidian.md" target="_blank">obsidian.md →</a>
+      </div>
+      <div class="ref-item">
+        <span class="ref-name">remotely-save — Obsidian Sync Plugin</span>
+        <a href="https://github.com/remotely-save/remotely-save" target="_blank">github.com/remotely-save →</a>
+      </div>
+      <div class="ref-item">
+        <span class="ref-name">n8n Code Node Reference</span>
+        <a href="https://docs.n8n.io/code/code-node/" target="_blank">docs.n8n.io/code →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="left">Daily Tasks Automation — v1.0</div>
+  <div class="right">Built with n8n · Dropbox · Obsidian</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const sections = document.querySelectorAll('section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

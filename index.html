@@ -26,10 +26,6 @@
         <span class="meta-value">n8n 2.8.3 Self-Hosted</span>
       </div>
       <div class="meta-item">
-        <span class="meta-label">Trigger</span>
-        <span class="meta-value">Daily @ 05:00</span>
-      </div>
-      <div class="meta-item">
         <span class="meta-label">Storage</span>
         <span class="meta-value">Dropbox / Obsidian</span>
       </div>
@@ -71,11 +67,6 @@
         <div class="stack-name">JavaScript</div>
         <div class="stack-role">All logic in n8n Code nodes</div>
       </div>
-      <div class="stack-card">
-        <div class="stack-icon">🕔</div>
-        <div class="stack-name">Cron Trigger</div>
-        <div class="stack-role">Scheduled daily execution</div>
-      </div>
     </div>
   </section>
 
@@ -101,7 +92,7 @@
     </div>
 
     <!-- Divider -->
-    <div class="showcase-divider">The Magic Behind It</div>
+    <div class="showcase-divider">Showcase</div>
 
     <!-- Workflow video block -->
     <div class="showcase-block">
@@ -305,81 +296,6 @@ e.g. "(Every MWF) Standup.md" matches Monday, Wednesday, Friday
       </div>
     </div>
   </section>
-
-  <!-- ─── IMPLEMENTATION ─── -->
-  <section>
-    <div class="section-label">06 — Implementation</div>
-    <h2>How It Was Built</h2>
-    <p>The workflow was built node by node, testing each step before moving to the next. Several unexpected challenges came up along the way.</p>
-
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h4>Planned the full node list upfront</h4>
-          <p>Before writing any code, the complete pipeline was mapped out including all data dependencies between nodes.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h4>Solved binary file reading</h4>
-          <p>Dropbox returns files as binary. n8n 2.8.3 with filesystem binary mode blocks <code>this.helpers.getBinaryDataBuffer</code> in the task runner sandbox. Solution: use an Extract from File node before any Code node touches it.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h4>Used Append Merge nodes to carry data forward</h4>
-          <p>Since each Dropbox node resets the JSON context, Merge (Append) nodes were used throughout to combine date data, markdown content, calendar results, and chore data into single items.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <h4>Replaced regex with indexOf for section parsing</h4>
-          <p>Regex-based section splitting failed due to double-escaping when embedded in JSON. Replaced with a simple <code>indexOf</code> approach — immune to escaping issues and easier to debug.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">5</div>
-        <div class="step-content">
-          <h4>Used .find() for robust item selection</h4>
-          <p>Rather than relying on fixed item indices, all Code nodes use <code>items.find(i => i.json.sections !== undefined)</code> to locate the correct item regardless of merge order.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">6</div>
-        <div class="step-content">
-          <h4>Sanitized chores JSON before parsing</h4>
-          <p>The chores.json file contained control characters causing <code>JSON.parse</code> to throw at position 729. Fixed with a pre-parse strip of the <code>\x00-\x1F</code> range.</p>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top: 48px;">
-      <h3>Key Challenges</h3>
-      <div class="challenge-list">
-        <div class="challenge">
-          <div class="challenge-badge">Binary Mode</div>
-          <div class="challenge-text"><strong>n8n filesystem binary mode</strong> blocks standard binary helpers in Code nodes. Worked around with Extract from File node.</div>
-        </div>
-        <div class="challenge">
-          <div class="challenge-badge">Data Loss</div>
-          <div class="challenge-text"><strong>Dropbox upload nodes</strong> don't pass through previous JSON. Every upload node breaks the data chain — fixed with Merge nodes at each break point.</div>
-        </div>
-        <div class="challenge">
-          <div class="challenge-badge">JSON Escape</div>
-          <div class="challenge-text"><strong>Regex patterns</strong> embedded in JSON get double-escaped. Replaced with indexOf-based parsing entirely.</div>
-        </div>
-        <div class="challenge">
-          <div class="challenge-badge">Control Chars</div>
-          <div class="challenge-text"><strong>chores.json</strong> contained invisible control characters causing JSON.parse to fail. Fixed with pre-parse sanitization.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ─── CLOSING ─── -->
   <div class="closing">
     <div class="section-label">07 — Closing Thoughts</div>
